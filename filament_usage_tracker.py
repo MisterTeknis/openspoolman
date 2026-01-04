@@ -8,10 +8,10 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from urllib.parse import urlparse
 
-from config import EXTERNAL_SPOOL_AMS_ID, EXTERNAL_SPOOL_ID, TRACK_LAYER_USAGE
+from config import EXTERNAL_SPOOL_AMS_ID, EXTERNAL_SPOOL_ID, TRACK_LAYER_USAGE, PRINTER_IP, PRINTER_NAME
 from spoolman_client import consumeSpool
 from spoolman_service import fetchSpools, getAMSFromTray, trayUid
-from tools_3mf import download3mfFromCloud, download3mfFromFTP, download3mfFromLocalFilesystem
+from tools_3mf import download3mfFromCloud, download3mfFromFTP, download3mfFromLocalFilesystem, clearTempFile
 from print_history import update_filament_spool, update_filament_grams_used, get_all_filament_usage_for_print, update_layer_tracking
 from logger import log
 
@@ -487,6 +487,9 @@ class FilamentUsageTracker:
     self._reset_layer_tracking_state()
     clear_checkpoint()
 
+    log("[DEBUG] Clearing temp print file")
+    clearTempFile(PRINTER_NAME, PRINTER_IP)
+
   def _handle_print_abort(self, status: str = LAYER_TRACKING_STATUS_ABORTED) -> None:
     if self.active_model is None:
       return
@@ -511,6 +514,9 @@ class FilamentUsageTracker:
     self.cumulative_length_used = {}
     self._reset_layer_tracking_state()
     clear_checkpoint()
+
+    log("[DEBUG] Clearing temp print file")
+    clearTempFile(PRINTER_NAME, PRINTER_IP)
 
   def _mm_to_grams(self, length_mm: float, diameter_mm: float, density_g_per_cm3: float) -> float:
     """

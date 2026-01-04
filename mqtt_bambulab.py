@@ -296,10 +296,10 @@ def processMessage(data):
             estimated_length=estimated_length_mm,
         )
 
-    # Clear out temp files if they exist on FAILED or FINISHED prints
-    if(DOWNLOADED_FILES.get(f"{PRINTER_NAME}_{PRINTER_IP}") and (PRINTER_STATE["print"].get("gcode_state") == "FAILED" or PRINTER_STATE["print"].get("gcode_state") == "FINISHED")):
-      log("would of cleared here")
-      clearTempFile(PRINTER_NAME, PRINTER_IP)
+    # # Clear out temp files if they exist on FAILED or FINISHED prints
+    # if(DOWNLOADED_FILES.get(f"{PRINTER_NAME}_{PRINTER_IP}") and PRINTER_STATE_LAST["print"].get("gecode_state") == "RUNNING" and (PRINTER_STATE["print"].get("gcode_state") == "FAILED" or PRINTER_STATE["print"].get("gcode_state") == "FINISHED")):
+    #   log("would of cleared here")
+    #   #clearTempFile(PRINTER_NAME, PRINTER_IP)
 
 
 
@@ -316,7 +316,11 @@ def processMessage(data):
         ):
 
         if not PENDING_PRINT_METADATA:
-          PENDING_PRINT_METADATA = getMetaDataFrom3mf(PRINTER_STATE["print"]["gcode_file"])
+          # TODO Seems to be trying to find an internal gcode file inside the 3mf file?
+          # And only firing sometimes, do we need this?
+          #PENDING_PRINT_METADATA = getMetaDataFrom3mf(PRINTER_STATE["print"]["gcode_file"])
+          log(f"[DEBUG] Would have tried to grab file {PRINTER_STATE["print"]["gcode_file"]}")
+
         if PENDING_PRINT_METADATA:
           PENDING_PRINT_METADATA["print_type"] = PRINTER_STATE["print"].get("print_type")
           PENDING_PRINT_METADATA["task_id"] = PRINTER_STATE["print"].get("task_id")
