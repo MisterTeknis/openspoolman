@@ -11,7 +11,7 @@ from urllib.parse import urlparse
 from config import EXTERNAL_SPOOL_AMS_ID, EXTERNAL_SPOOL_ID, TRACK_LAYER_USAGE, PRINTER_IP, PRINTER_NAME
 from spoolman_client import consumeSpool
 from spoolman_service import fetchSpools, getAMSFromTray, trayUid
-from tools_3mf import download3mfFromCloud, download3mfFromFTP, download3mfFromLocalFilesystem, clearTempFile
+from tools_3mf import download3mfFromCloud, download3mfFromFTP, download3mfFromLocalFilesystem, clearTempFile, retrieve_model
 from print_history import update_filament_spool, update_filament_grams_used, get_all_filament_usage_for_print, update_layer_tracking
 from logger import log
 
@@ -424,19 +424,22 @@ class FilamentUsageTracker:
       log("[filament-tracker] No model URL provided")
       return None
 
-    uri = urlparse(model_url)
+    # uri = urlparse(model_url)
     try:
-      with tempfile.NamedTemporaryFile(suffix=".3mf", delete=False) as model_file:
-        if uri.scheme in ("https", "http"):
-          log(f"[filament-tracker] Downloading model via HTTP(S): {model_url}")
-          download3mfFromCloud(model_url, model_file)
-        elif uri.scheme == "local":
-          log(f"[filament-tracker] Loading model from local path: {uri.path}")
-          download3mfFromLocalFilesystem(uri.path, model_file)
-        else:
-          log(f"[filament-tracker] Downloading model via FTP: {model_url}")
-          download3mfFromFTP(model_url.rpartition('/')[-1], model_file) # Pull just filename to clear out any unexpected paths
-        return model_file.name
+      # Grab the model
+      return retrieve_model(model_url)
+    #   with tempfile.NamedTemporaryFile(suffix=".3mf", delete=False) as model_file:
+    #     if uri.scheme in ("https", "http"):
+    #       log(f"[filament-tracker] Downloading model via HTTP(S): {model_url}")
+    #       download3mfFromCloud(model_url, model_file)
+    #     elif uri.scheme == "local":
+    #       log(f"[filament-tracker] Loading model from local path: {uri.path}")
+    #       download3mfFromLocalFilesystem(uri.path, model_file)
+    #     else:
+    #       log(f"[filament-tracker] Downloading model via FTP: {model_url}")
+    #       download3mfFromFTP(model_url.rpartition('/')[-1], model_file) # Pull just filename to clear out any unexpected paths
+    #     return model_file.name
+    
     except Exception as exc:
       log(f"Failed to fetch model: {exc}")
       return None

@@ -166,32 +166,9 @@ def getMetaDataFrom3mf(url):
   """
   try:
     metadata = {}
-    temp_file_name = ""
 
-    # Check if we have already downloaded the file previously
-    if not DOWNLOADED_FILES.get(f"{PRINTER_NAME}_{PRINTER_IP}"):
-      log("[DEBUG] Don't already have the model in temp file cache")
-    
-    # Create a temporary file, DELETE is FALSE, make sure to cleanup when printing ends
-    #TODO handle cleanup on crashes
-      with tempfile.NamedTemporaryFile(delete_on_close=False,delete=False,prefix=f"{PRINTER_NAME}_{PRINTER_IP}_", suffix=".3mf") as temp_file:
-        temp_file_name = temp_file.name
-        
-        if url.startswith("http"):
-          download3mfFromCloud(url, temp_file)
-        elif url.startswith("local:"):
-          download3mfFromLocalFilesystem(url.replace("local:", ""), temp_file)
-        else:
-          download3mfFromFTP(url.rpartition('/')[-1], temp_file) # Pull just filename to clear out any unexpected paths
-        
-        temp_file.close()
-        DOWNLOADED_FILES[f"{PRINTER_NAME}_{PRINTER_IP}"] = temp_file_name # Use Printer name + IP for multiple printer support
-        log(f"3MF file downloaded and saved as {temp_file_name}.")
-    
-    # Set to previously downloaded temp file
-    else:
-      temp_file_name = DOWNLOADED_FILES[f"{PRINTER_NAME}_{PRINTER_IP}"]
-      log(f"[DEBUG] Using already cached temp file, path: {temp_file_name}")
+    # Retrieve the model
+    temp_file_name = retrieve_model(url)
       
     
     metadata["model_path"] = url
@@ -308,6 +285,49 @@ def getMetaDataFrom3mf(url):
   except Exception as e:
     log(f"An unexpected error occurred: {e}")
     return {}
+
+# Reteive the model from temp file cache if we already have it, otherwise grab it from the printer.
+def retrieve_model(url):
+  if not url:
+    log("[DEBUG] No URL supplied to retireve printer model")
+    return None
+  
+  try:
+    temp_file_name = ""
+
+    # Check if we have already downloaded the file previously
+    if not DOWNLOADED_FILES.get(f"{PRINTER_NAME}_{PRINTER_IP}"):
+      log("[DEBUG] Don't already have the model in temp file cache")
+    
+      # Create a temporary file, DELETE is FALSE, make sure to cleanup when printing ends
+      #TODO handle cleanup on crashes
+      with tempfile.NamedTemporaryFile(delete_on_close=False,delete=False,prefix=f"{PRINTER_NAME}_{PRINTER_IP}_", suffix=".3mf") as temp_file:
+        temp_file_name = temp_file.name
+        
+        if url.startswith("http"):
+          download3mfFromCloud(url, temp_file)
+        elif url.startswith("local:"):
+          download3mfFromLocalFilesystem(url.replace("local:", ""), temp_file)
+        else:
+          download3mfFromFTP(url.rpartition('/')[-1], temp_file) # Pull just filename to clear out any unexpected paths
+        
+        temp_file.close()
+        DOWNLOADED_FILES[f"{PRINTER_NAME}_{PRINTER_IP}"] = temp_file_name # Use Printer name + IP for multiple printer support
+        log(f"3MF file downloaded and saved as {temp_file_name}.")
+    
+    # Set to previously downloaded temp file
+    else:
+      temp_file_name = DOWNLOADED_FILES[f"{PRINTER_NAME}_{PRINTER_IP}"]
+      log(f"[DEBUG] Using already cached temp file, path: {temp_file_name}")
+    
+    return temp_file_name
+  
+  except requests.exceptions.RequestException as e:
+    log(f"Error downloading file: {e}")
+    return None
+  except Exception as e:
+    log(f"An unexpected error occurred: {e}")
+    return None
 
 def clearTempFile(PRINTER_NAME, PRINTER_IP):
   
