@@ -168,7 +168,7 @@ def getMetaDataFrom3mf(url):
     metadata = {}
 
     # Retrieve the model
-    temp_file_name = retrieve_model(url)
+    temp_file_name = retrieveModel(url)
       
     
     metadata["model_path"] = url
@@ -287,7 +287,7 @@ def getMetaDataFrom3mf(url):
     return {}
 
 # Reteive the model from temp file cache if we already have it, otherwise grab it from the printer.
-def retrieve_model(url):
+def retrieveModel(url):
   if not url:
     log("[DEBUG] No URL supplied to retireve printer model")
     return None
@@ -301,7 +301,12 @@ def retrieve_model(url):
     
       # Create a temporary file, DELETE is FALSE, make sure to cleanup when printing ends
       #TODO handle cleanup on crashes
-      with tempfile.NamedTemporaryFile(delete_on_close=False,delete=False,prefix=f"{PRINTER_NAME}_{PRINTER_IP}_", suffix=".3mf") as temp_file:
+
+      # Create OpenSpoolMan temp directory for easier/safer file cleanup
+      temp_dir = os.path.join(tempfile.gettempdir(), "OpenSpoolMan")
+      os.makedirs(temp_dir, exist_ok=True)
+
+      with tempfile.NamedTemporaryFile(dir=temp_dir, delete_on_close=False,delete=False,prefix=f"{PRINTER_NAME}_{PRINTER_IP}_", suffix=".3mf") as temp_file:
         temp_file_name = temp_file.name
         
         if url.startswith("http"):
@@ -312,7 +317,7 @@ def retrieve_model(url):
           download3mfFromFTP(url.rpartition('/')[-1], temp_file) # Pull just filename to clear out any unexpected paths
         
         temp_file.close()
-        DOWNLOADED_FILES[f"{PRINTER_NAME}_{PRINTER_IP}"] = temp_file_name # Use Printer name + IP for multiple printer support
+        DOWNLOADED_FILES[f"{PRINTER_NAME}_{PRINTER_IP}"] = temp_file_name # Use Printer name + IP for future multiple printer support
         log(f"3MF file downloaded and saved as {temp_file_name}.")
     
     # Set to previously downloaded temp file
@@ -337,3 +342,4 @@ def clearTempFile(PRINTER_NAME, PRINTER_IP):
       if os.path.exists(temp_file_path):
           os.remove(temp_file_path)
       print(f"Temp file: {temp_file_path} cleared for printer: {PRINTER_NAME} {PRINTER_IP}.")
+
